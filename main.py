@@ -2,9 +2,11 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphics
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
 from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout
-import sys
+import sys, re
 
-
+def is_license_plate(str):
+    pattern = r"^(([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z](([0-9]{5}[DF])|([DF]([A-HJ-NP-Z0-9])[0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳使领]))$"
+    return bool(re.match(pattern, str))
 
 class LoginDialog(QDialog):
     def __init__(self):
@@ -24,7 +26,6 @@ class LoginDialog(QDialog):
 
         self.register_button = QPushButton("注册新账户")
         self.register_button.clicked.connect(self.registnew)
-
 
         layout = QVBoxLayout()
         layout.addWidget(self.username_label)
@@ -69,12 +70,8 @@ class LoginDialog(QDialog):
                 self.confirm_password_edit = QLineEdit()
                 self.confirm_password_edit.setEchoMode(QLineEdit.Password)
 
-
                 self.register_button = QPushButton("注册")
                 self.register_button.clicked.connect(self.register)
-                
-
-
 
                 layout = QVBoxLayout()
                 layout.addWidget(self.username_label)
@@ -101,7 +98,7 @@ class LoginDialog(QDialog):
                     f.write(f'{username}:{password}\n')
 
                 QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
-                #退出窗口
+                # 退出窗口
                 self.accept()
 
         dialog = RegisterDialog()
