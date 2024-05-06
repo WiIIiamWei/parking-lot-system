@@ -181,7 +181,7 @@ class ParkingSpace(QGraphicsRectItem):
         with open('parking_lot_state.txt', 'w') as f:
             for item in self.scene().items():
                 if isinstance(item, ParkingSpace) and item.plate_number is not None:
-                    f.write(item.plate_number + '\n')
+                    f.write(f'{item.id}:{item.plate_number}\n')
 
 class ParkingLot(QMainWindow):
     def __init__(self):
@@ -219,12 +219,13 @@ class ParkingLot(QMainWindow):
             with open('parking_lot_state.txt', 'r') as f:
                 parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
                 for line in f:
-                    id, plate_number = line.strip().split(':')
-                    parking_space = parking_spaces[int(id)]
-                    parking_space.plate_number = plate_number
-                    parking_space.setBrush(QBrush(QColor(255, 0, 0)))
-                    parking_space.text_item = QGraphicsTextItem(parking_space.plate_number, parking_space)
-                    parking_space.text_item.setPos(parking_space.rect().center() - parking_space.text_item.boundingRect().center())
+                    if ':' in line:  # Check if the line contains a colon
+                        id, plate_number = line.strip().split(':')
+                        parking_space = parking_spaces[int(id)]
+                        parking_space.plate_number = plate_number
+                        parking_space.setBrush(QBrush(QColor(255, 0, 0)))
+                        parking_space.text_item = QGraphicsTextItem(parking_space.plate_number, parking_space)
+                        parking_space.text_item.setPos(parking_space.rect().center() - parking_space.text_item.boundingRect().center())
         except FileNotFoundError:
             pass
 
@@ -253,7 +254,8 @@ class ParkingLot(QMainWindow):
                     y += extra_margin
                     if row >= 3:
                         y += extra_margin
-                parking_space = ParkingSpace(row * num_columns + column, x, y, space_width, space_height)
+                id = row * num_columns + column + 1  # Modify the ID index
+                parking_space = ParkingSpace(id, x, y, space_width, space_height)
                 self.scene.addItem(parking_space)
         
         # Display ID on top of parking spaces
