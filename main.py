@@ -69,7 +69,6 @@ class LoginDialog(QDialog):
                 self.confirm_password_edit = QLineEdit()
                 self.confirm_password_edit.setEchoMode(QLineEdit.Password)
 
-                
 
                 self.register_button = QPushButton("注册")
                 self.register_button.clicked.connect(self.register)
