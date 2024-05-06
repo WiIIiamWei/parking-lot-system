@@ -161,7 +161,7 @@ class ParkingSpace(QGraphicsRectItem):
 
     def mousePressEvent(self, event):
         if self.plate_number is None:
-            plate_number, ok = QInputDialog.getText(None, "Car Info", "Enter the car plate number:")
+            plate_number, ok = QInputDialog.getText(None, "车牌录入", "请输入车牌号：")
             if ok and plate_number:
                 self.plate_number = plate_number
                 self.setBrush(QBrush(QColor(255, 0, 0)))
@@ -169,7 +169,7 @@ class ParkingSpace(QGraphicsRectItem):
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
                 self.save_state()
         else:
-            reply = QMessageBox.question(None, 'Remove Car', 'Are you sure you want to remove the car?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self.plate_number = None
                 self.setBrush(QBrush(QColor(0, 255, 0)))
@@ -187,7 +187,7 @@ class ParkingLot(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Parking Lot")
+        self.setWindowTitle("停车场管理系统")
         self.setGeometry(100, 100, 1000, 1000)  # Increase the window size
 
         self.scene = QGraphicsScene(self)
