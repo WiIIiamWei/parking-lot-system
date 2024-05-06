@@ -90,7 +90,7 @@ class LoginDialog(QDialog):
                 layout.addWidget(self.confirm_password_label)
                 layout.addWidget(self.confirm_password_edit)
                 layout.addWidget(self.role_combobox)  # Add the role combobox to the layout
-                
+
                 layout.addWidget(self.register_button)
                 
 
@@ -135,6 +135,7 @@ class ParkingSpace(QGraphicsRectItem):
         self.id = id  # Add id attribute
         self.id_text_item = QGraphicsTextItem(str(self.id), self)  # Display id on the parking space
         self.id_text_item.setPos(self.rect().topLeft())
+    
     
     def save_state(self):
         with open('parking_lot_state.txt', 'w') as f:
