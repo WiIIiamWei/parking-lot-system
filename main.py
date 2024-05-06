@@ -1,14 +1,178 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QInputDialog, QGraphicsTextItem, QGraphicsRectItem, QMessageBox
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
 from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout
 import sys
 
+
+
+
+
+
+
+class RegisterDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("注册")
+
+        self.username_label = QLabel("用户名")
+        self.username_edit = QLineEdit()
+
+        self.password_label = QLabel("密码")
+        self.password_edit = QLineEdit()
+        self.password_edit.setEchoMode(QLineEdit.Password)
+
+        self.confirm_password_label = QLabel("确认密码")
+        self.confirm_password_edit = QLineEdit()
+        self.confirm_password_edit.setEchoMode(QLineEdit.Password)
+
+        self.register_button = QPushButton("注册")
+        self.register_button.clicked.connect(self.register)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.username_label)
+        layout.addWidget(self.username_edit)
+        layout.addWidget(self.password_label)
+        layout.addWidget(self.password_edit)
+        layout.addWidget(self.confirm_password_label)
+        layout.addWidget(self.confirm_password_edit)
+        layout.addWidget(self.register_button)
+
+        self.setLayout(layout)
+
+    def register(self):
+        username = self.username_edit.text()
+        password = self.password_edit.text()
+        confirm_password = self.confirm_password_edit.text()
+        # 保存用户名和密码到数据库
+        with open('/Users/a123/vscode/parking_lot_system/parking_lot_system/user_information.txt', 'a') as f:
+            f.write(f'{username}:{password}\n')
+
+
+
+
+        
+        if password != confirm_password:
+            QMessageBox.warning(self, "错误", "两次输入的密码不一致")
+            return
+
+        QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
+class LoginDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("登录")
+
+        self.username_label = QLabel("用户名")
+        self.username_edit = QLineEdit()
+
+        self.password_label = QLabel("密码")
+        self.password_edit = QLineEdit()
+        self.password_edit.setEchoMode(QLineEdit.Password)
+
+        self.login_button = QPushButton("登录")
+        self.login_button.clicked.connect(self.login)
+
+        self.register_button = QPushButton("注册新账户")
+        self.register_button.clicked.connect(self.registnew)
+
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.username_label)
+        layout.addWidget(self.username_edit)
+        layout.addWidget(self.password_label)
+        layout.addWidget(self.password_edit)
+        layout.addWidget(self.login_button)
+        layout.addWidget(self.register_button)
+
+        self.setLayout(layout)
+
+    def login(self):
+        username = self.username_edit.text()
+        password = self.password_edit.text()
+        # 检查用户名和密码是否正确
+        with open('/Users/a123/vscode/parking_lot_system/parking_lot_system/user_information.txt', 'r') as f:
+            for line in f:
+                saved_username, saved_password = line.strip().split(':')
+                if username == saved_username and password == saved_password:
+                    break
+            else:
+                QMessageBox.warning(self, "错误", "用户名或密码错误")
+                return
+        QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
+    
+    def registnew(self):
+
+        class RegisterDialog(QDialog):
+            def __init__(self):
+                super().__init__()
+
+                self.setWindowTitle("注册")
+
+                self.username_label = QLabel("用户名")
+                self.username_edit = QLineEdit()
+
+                self.password_label = QLabel("密码")
+                self.password_edit = QLineEdit()
+                self.password_edit.setEchoMode(QLineEdit.Password)
+
+                self.confirm_password_label = QLabel("确认密码")
+                self.confirm_password_edit = QLineEdit()
+                self.confirm_password_edit.setEchoMode(QLineEdit.Password)
+
+                self.register_button = QPushButton("注册")
+                self.register_button.clicked.connect(self.register)
+
+                layout = QVBoxLayout()
+                layout.addWidget(self.username_label)
+                layout.addWidget(self.username_edit)
+                layout.addWidget(self.password_label)
+                layout.addWidget(self.password_edit)
+                layout.addWidget(self.confirm_password_label)
+                layout.addWidget(self.confirm_password_edit)
+                layout.addWidget(self.register_button)
+
+                self.setLayout(layout)
+
+            def register(self):
+                username = self.username_edit.text()
+                password = self.password_edit.text()
+                confirm_password = self.confirm_password_edit.text()
+
+                if password != confirm_password:
+                    QMessageBox.warning(self, "错误", "两次输入的密码不一致")
+                    return
+
+                # 保存用户名和密码到数据库
+                with open('/Users/a123/vscode/parking_lot_system/parking_lot_system/user_information.txt', 'a') as f:
+                    f.write(f'{username}:{password}\n')
+
+                QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
+
+        dialog = RegisterDialog()
+        dialog.exec_()
+
+        
+
+        
+        
+
+                                    
 class ParkingSpace(QGraphicsRectItem):
-    def __init__(self, x, y, width, height, parent=None):
+    def __init__(self, id,x, y, width, height, parent=None):
+        
+
         super().__init__(x, y, width, height, parent)
         self.setBrush(QBrush(QColor(0, 255, 0)))
         self.plate_number = None
         self.text_item = None
+    
+    def save_state(self):
+        with open('parking_lot_state.txt', 'w') as f:
+            for item in self.scene().items():
+                if isinstance(item, ParkingSpace) and item.plate_number is not None:
+                    f.write(item.plate_number + '\n')
 
     def mousePressEvent(self, event):
         if self.plate_number is None:
@@ -35,6 +199,19 @@ class ParkingSpace(QGraphicsRectItem):
                     f.write(item.plate_number + '\n')
 
 class ParkingLot(QMainWindow):
+    def load_state(self):
+        try:
+            with open('parking_lot_state.txt', 'r') as f:
+                plate_numbers = f.read().splitlines()
+                parking_spaces = [item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)]
+                for i, plate_number in enumerate(plate_numbers):
+                    parking_space = parking_spaces[i]
+                    parking_space.plate_number = plate_number
+                    parking_space.setBrush(QBrush(QColor(255, 0, 0)))
+                    parking_space.text_item = QGraphicsTextItem(parking_space.plate_number, parking_space)
+                    parking_space.text_item.setPos(parking_space.rect().center() - parking_space.text_item.boundingRect().center())
+        except FileNotFoundError:
+            pass
     def __init__(self):
         super().__init__()
 
@@ -57,10 +234,10 @@ class ParkingLot(QMainWindow):
         space_margin = 10
         num_spaces = 5
 
-        for i in range(num_spaces):
-            x = space_margin + (space_width + space_margin) * i
+        for id in range(num_spaces):
+            x = space_margin + (space_width + space_margin) * id
             y = space_margin
-            parking_space = ParkingSpace(x, y, space_width, space_height)
+            parking_space = ParkingSpace(id,x, y, space_width, space_height)
             self.scene.addItem(parking_space)
 
     def load_state(self):
@@ -85,6 +262,10 @@ class ParkingLot(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    parking_lot = ParkingLot()
-    parking_lot.show()
+    login_dialog = LoginDialog()
+    login_dialog.show()
+
+
+
+    
     sys.exit(app.exec_())
