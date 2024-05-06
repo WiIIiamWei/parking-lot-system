@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QInputDialog, QGraphicsTextItem, QGraphicsRectItem, QMessageBox
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
 from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout,QComboBox
 import sys, re
 
 def is_license_plate(str):
@@ -13,10 +13,7 @@ class LoginDialog(QDialog):
 
         self.setWindowTitle("登录")
         
-        self.role_label = QLabel("角色")
-        self.role_combobox = QComboBox()
-        self.role_combobox.addItem("管理员")
-        self.role_combobox.addItem("车主")
+
 
         self.username_label = QLabel("用户名")
         self.username_edit = QLineEdit()
@@ -24,6 +21,7 @@ class LoginDialog(QDialog):
         self.password_label = QLabel("密码")
         self.password_edit = QLineEdit()
         self.password_edit.setEchoMode(QLineEdit.Password)
+        
 
         self.login_button = QPushButton("登录")
         self.login_button.clicked.connect(self.login)
@@ -36,8 +34,6 @@ class LoginDialog(QDialog):
         layout.addWidget(self.username_edit)
         layout.addWidget(self.password_label)
         layout.addWidget(self.password_edit)
-        layout.addWidget(self.role_label)
-        layout.addWidget(self.role_combobox)
         layout.addWidget(self.login_button)
         layout.addWidget(self.register_button)
 
@@ -53,7 +49,7 @@ class LoginDialog(QDialog):
                 saved_username, saved_password, saved_role = line.strip().split(':')
                 if username == saved_username and password == saved_password :
                     QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
-                    self.role = self.role_combobox.currentText()  # Set the role attribute to the selected role
+                    self.role = saved_role
                     self.accept()  # Close the login dialog
                     return
             else:
@@ -87,8 +83,14 @@ class LoginDialog(QDialog):
                 layout.addWidget(self.password_label)
                 layout.addWidget(self.password_edit)
 
+
                 layout.addWidget(self.confirm_password_label)
                 layout.addWidget(self.confirm_password_edit)
+                
+                self.role_label = QLabel("角色")
+                self.role_combobox = QComboBox()
+                self.role_combobox.addItem("管理员")
+                self.role_combobox.addItem("车主")
                 layout.addWidget(self.role_combobox)  # Add the role combobox to the layout
 
                 layout.addWidget(self.register_button)
@@ -101,24 +103,20 @@ class LoginDialog(QDialog):
                 password = self.password_edit.text()
                 confirm_password = self.confirm_password_edit.text()
                 role = self.role_combobox.currentText()  # Get the selected role
+                print(role)
 
 
                 if password != confirm_password:
                     QMessageBox.warning(self, "错误", "两次输入的密码不一致")
                     return
 
-                # 检查用户名是否已经存在
-                with open('./user_information.txt', 'r') as f:
-                    for line in f:
-                        saved_username, _, _ = line.strip().split(':')
-                        if username == saved_username:
-                            QMessageBox.warning(self, "错误", "用户名已存在")
-                            return
+                
 
                 # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
                     f.write(f"{username}:{password}:{role}\n")  # Save the role along with the username and password
 
+                
                 QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
                 # 退出窗口
                 self.accept()
