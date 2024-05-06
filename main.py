@@ -7,12 +7,16 @@ import sys, re
 def is_license_plate(str):
     pattern = r"^(([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z](([0-9]{5}[DF])|([DF]([A-HJ-NP-Z0-9])[0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳使领]))$"
     return bool(re.match(pattern, str))
-
 class LoginDialog(QDialog):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("登录")
+        
+        self.role_label = QLabel("角色")
+        self.role_combobox = QComboBox()
+        self.role_combobox.addItem("管理员")
+        self.role_combobox.addItem("车主")
 
         self.username_label = QLabel("用户名")
         self.username_edit = QLineEdit()
@@ -32,10 +36,13 @@ class LoginDialog(QDialog):
         layout.addWidget(self.username_edit)
         layout.addWidget(self.password_label)
         layout.addWidget(self.password_edit)
+        layout.addWidget(self.role_label)
+        layout.addWidget(self.role_combobox)
         layout.addWidget(self.login_button)
         layout.addWidget(self.register_button)
 
         self.setLayout(layout)
+
 
     def login(self):
         username = self.username_edit.text()
@@ -43,13 +50,15 @@ class LoginDialog(QDialog):
         # 检查用户名和密码是否正确
         with open('./user_information.txt', 'r') as f:
             for line in f:
-                saved_username, saved_password = line.strip().split(':')
-                if username == saved_username and password == saved_password:
+                saved_username, saved_password, saved_role = line.strip().split(':')
+                if username == saved_username and password == saved_password :
                     QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
+                    self.role = self.role_combobox.currentText()  # Set the role attribute to the selected role
                     self.accept()  # Close the login dialog
                     return
             else:
                 QMessageBox.warning(self, "错误", "用户名或密码错误")
+
     
     def registnew(self):
 
@@ -57,8 +66,7 @@ class LoginDialog(QDialog):
             def __init__(self):
                 super().__init__()
 
-                self.setWindowTitle("注册")
-
+                
                 self.username_label = QLabel("用户名")
                 self.username_edit = QLineEdit()
 
@@ -78,9 +86,13 @@ class LoginDialog(QDialog):
                 layout.addWidget(self.username_edit)
                 layout.addWidget(self.password_label)
                 layout.addWidget(self.password_edit)
+
                 layout.addWidget(self.confirm_password_label)
                 layout.addWidget(self.confirm_password_edit)
+                layout.addWidget(self.role_combobox)  # Add the role combobox to the layout
+                
                 layout.addWidget(self.register_button)
+                
 
                 self.setLayout(layout)
 
@@ -88,14 +100,24 @@ class LoginDialog(QDialog):
                 username = self.username_edit.text()
                 password = self.password_edit.text()
                 confirm_password = self.confirm_password_edit.text()
+                role = self.role_combobox.currentText()  # Get the selected role
+
 
                 if password != confirm_password:
                     QMessageBox.warning(self, "错误", "两次输入的密码不一致")
                     return
 
-                # 保存用户名和密码到数据库
+                # 检查用户名是否已经存在
+                with open('./user_information.txt', 'r') as f:
+                    for line in f:
+                        saved_username, _, _ = line.strip().split(':')
+                        if username == saved_username:
+                            QMessageBox.warning(self, "错误", "用户名已存在")
+                            return
+
+                # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
-                    f.write(f'{username}:{password}\n')
+                    f.write(f"{username}:{password}:{role}\n")  # Save the role along with the username and password
 
                 QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
                 # 退出窗口
@@ -121,9 +143,13 @@ class ParkingSpace(QGraphicsRectItem):
                     f.write(f'{item.id}:{item.plate_number}\n')  # Include id in the file
 
     def mousePressEvent(self, event):
+        if login_dialog.role == "车主" and self.plate_number is not None:
+            QMessageBox.warning(None, "错误", "你没有权限更改这个车位")
+            return
         if self.plate_number is None:
             plate_number, ok = QInputDialog.getText(None, "车牌录入", "请输入车牌号：")
-            if ok and plate_number:
+            
+            if ok and plate_number :
                 self.plate_number = plate_number
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
