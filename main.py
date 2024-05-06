@@ -4,50 +4,8 @@ from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout
 import sys
 
-class RegisterDialog(QDialog):
-    def __init__(self):
-        super().__init__()
 
-        self.setWindowTitle("注册")
 
-        self.username_label = QLabel("用户名")
-        self.username_edit = QLineEdit()
-
-        self.password_label = QLabel("密码")
-        self.password_edit = QLineEdit()
-        self.password_edit.setEchoMode(QLineEdit.Password)
-
-        self.confirm_password_label = QLabel("确认密码")
-        self.confirm_password_edit = QLineEdit()
-        self.confirm_password_edit.setEchoMode(QLineEdit.Password)
-
-        self.register_button = QPushButton("注册")
-        self.register_button.clicked.connect(self.register)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.username_label)
-        layout.addWidget(self.username_edit)
-        layout.addWidget(self.password_label)
-        layout.addWidget(self.password_edit)
-        layout.addWidget(self.confirm_password_label)
-        layout.addWidget(self.confirm_password_edit)
-        layout.addWidget(self.register_button)
-
-        self.setLayout(layout)
-
-    def register(self):
-        username = self.username_edit.text()
-        password = self.password_edit.text()
-        confirm_password = self.confirm_password_edit.text()
-        # 保存用户名和密码到数据库
-        with open('./user_information.txt', 'a') as f:
-            f.write(f'{username}:{password}\n')
-        
-        if password != confirm_password:
-            QMessageBox.warning(self, "错误", "两次输入的密码不一致")
-            return
-
-        QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
 class LoginDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -111,8 +69,13 @@ class LoginDialog(QDialog):
                 self.confirm_password_edit = QLineEdit()
                 self.confirm_password_edit.setEchoMode(QLineEdit.Password)
 
+                
+
                 self.register_button = QPushButton("注册")
                 self.register_button.clicked.connect(self.register)
+                
+
+
 
                 layout = QVBoxLayout()
                 layout.addWidget(self.username_label)
@@ -139,6 +102,8 @@ class LoginDialog(QDialog):
                     f.write(f'{username}:{password}\n')
 
                 QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
+                #退出窗口
+                self.accept()
 
         dialog = RegisterDialog()
         dialog.exec_()
