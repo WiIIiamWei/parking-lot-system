@@ -139,3 +139,5 @@ cython_debug/
 
 .vscode
 parking_lot_state.txt
+user_information.txt
+parking_lot_state.txt
