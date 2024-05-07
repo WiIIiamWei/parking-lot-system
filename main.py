@@ -147,13 +147,21 @@ class ParkingSpace(QGraphicsRectItem):
                     f.write(f'{item.id}:{item.plate_number}\n')  # Include id in the file
 
     def mousePressEvent(self, event):
-        if login_dialog.role == "车主":
-            if self.plate_number is not None and self.plate_number != login_dialog.username:
+        if login_dialog.role == "车主" or login_dialog.role == "管理员":
+            if self.plate_number is not None and self.plate_number != login_dialog.username and login_dialog.role != "管理员":
                 QMessageBox.warning(None, "错误", "你没有权限更改这个车位")
                 return
 
             if self.plate_number is None:
-                self.plate_number = login_dialog.username
+                if login_dialog.role == "管理员":
+                    text, ok = QInputDialog.getText(None, '输入车牌号', '请输入车牌号:')
+                    if ok and is_license_plate(text):
+                        self.plate_number = text
+                    else:
+                        QMessageBox.warning(None, "错误", "请输入有效的车牌号")
+                        return
+                else:
+                    self.plate_number = login_dialog.username
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
@@ -165,10 +173,7 @@ class ParkingSpace(QGraphicsRectItem):
                     self.setBrush(QBrush(QColor(0, 255, 0)))
                     self.scene().removeItem(self.text_item)
                     self.text_item = None
-        self.save_state()
-
-    
-    
+            self.save_state()
 
     def save_state(self):
         with open('parking_lot_state.txt', 'w') as f:
