@@ -3,7 +3,20 @@ from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
 from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout,QComboBox
 import sys, re
+from datetime import datetime
+# 定义每小时的费用
+COST_PER_HOUR = 10
 
+def calculate_fee(start_time, end_time):
+    # 计算总时间（以小时为单位）
+    total_hours = (end_time - start_time).seconds / 3600
+
+    # 计算总费用
+    total_fee = total_hours * COST_PER_HOUR
+    if total_fee<=1:
+        total_fee=1
+
+    return total_fee
 def is_license_plate(str):
     pattern = r"^(([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z](([0-9]{5}[DF])|([DF]([A-HJ-NP-Z0-9])[0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳使领]))$"
     return bool(re.match(pattern, str))
@@ -138,7 +151,7 @@ class ParkingSpace(QGraphicsRectItem):
         self.id = id  # Add id attribute
         self.id_text_item = QGraphicsTextItem(str(self.id), self)  # Display id on the parking space
         self.id_text_item.setPos(self.rect().topLeft())
-    
+        self.entry_time = None
     
     def save_state(self):
         with open('parking_lot_state.txt', 'w') as f:
@@ -165,14 +178,20 @@ class ParkingSpace(QGraphicsRectItem):
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
+                self.entry_time = datetime.now()  # Record the entry time
                 self.save_state()
             else:
                 reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
+                    parking_duration = datetime.now() - self.entry_time  # Calculate the parking duration
+                    fee = calculate_fee(self.entry_time, datetime.now())  # Calculate the fee
+
+                    QMessageBox.information(None, "停车时间", f"停车时间：{parking_duration}，费用：{fee}")
                     self.plate_number = None
                     self.setBrush(QBrush(QColor(0, 255, 0)))
                     self.scene().removeItem(self.text_item)
                     self.text_item = None
+                    self.entry_time = None  # Reset the entry time
             self.save_state()
 
     def save_state(self):
@@ -194,6 +213,21 @@ class ParkingLot(QMainWindow):
 
         self.draw_parking_lot()
         self.load_state()
+    def load_state(self):
+        try:
+            with open('parking_lot_state.txt', 'r') as f:
+                parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
+                for line in f:
+                    if ':' in line:  # Check if the line contains a colon
+                        id, plate_number, entry_time = line.strip().split(':')
+                        parking_space = parking_spaces[int(id)]
+                        parking_space.plate_number = plate_number
+                        parking_space.entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M:%S.%f")  # Parse the entry time
+                        parking_space.setBrush(QBrush(QColor(255, 0, 0)))
+                        parking_space.text_item = QGraphicsTextItem(parking_space.plate_number, parking_space)
+                        parking_space.text_item.setPos(parking_space.rect().center() - parking_space.text_item.boundingRect().center())
+        except FileNotFoundError:
+            pass
 
     def draw_parking_lot(self):
         self.scene.clear()
@@ -211,6 +245,13 @@ class ParkingLot(QMainWindow):
                 y = space_margin + (space_height + space_margin) * row
                 parking_space = ParkingSpace(row * num_columns + column, x, y, space_width, space_height)
                 self.scene.addItem(parking_space)
+    
+    def save_state(self):
+        with open('parking_lot_state.txt', 'w') as f:
+            for item in self.scene().items():
+                if isinstance(item, ParkingSpace) and item.plate_number is not None:
+                    f.write(f'{item.id}:{item.plate_number}:{item.entry_time}\n')  # Include entry time in the file
+
 
     def load_state(self):
         try:
