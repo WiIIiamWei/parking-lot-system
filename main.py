@@ -157,16 +157,26 @@ class ParkingSpace(QGraphicsRectItem):
             if self.plate_number is not None and self.plate_number != login_dialog.username and login_dialog.role != "管理员":
                 QMessageBox.warning(None, "错误", "你没有权限更改这个车位")
                 return
-
+    
             if self.plate_number is None:
                 if login_dialog.role == "管理员":
                     text, ok = QInputDialog.getText(None, '输入车牌号', '请输入车牌号:')
                     if ok and is_license_plate(text):
+                        # Check if the car is already parked
+                        for item in self.scene().items():
+                            if isinstance(item, ParkingSpace) and item.plate_number == text:
+                                QMessageBox.warning(None, "错误", "这辆车已经停在停车场中")
+                                return
                         self.plate_number = text
                     else:
                         QMessageBox.warning(None, "错误", "请输入有效的车牌号")
                         return
                 else:
+                    # Check if the car is already parked
+                    for item in self.scene().items():
+                        if isinstance(item, ParkingSpace) and item.plate_number == login_dialog.username:
+                            QMessageBox.warning(None, "错误", "你的车已经停在停车场中")
+                            return
                     self.plate_number = login_dialog.username
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
@@ -178,7 +188,7 @@ class ParkingSpace(QGraphicsRectItem):
                 if reply == QMessageBox.Yes:
                     parking_duration = datetime.now() - self.entry_time  # Calculate the parking duration
                     fee = calculate_fee(self.entry_time, datetime.now())  # Calculate the fee
-
+    
                     QMessageBox.information(None, "停车时间", f"停车时间：{parking_duration}，费用：{fee}")
                     self.plate_number = None
                     self.setBrush(QBrush(QColor(0, 255, 0)))
