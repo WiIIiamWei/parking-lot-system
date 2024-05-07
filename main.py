@@ -145,13 +145,12 @@ class ParkingSpace(QGraphicsRectItem):
         self.id_text_item = QGraphicsTextItem(str(self.id), self)  # Display id on the parking space
         self.id_text_item.setPos(self.rect().topLeft())
         self.entry_time = None
-        self.balance = 1000  # Add balance attribute
-
+    
     def save_state(self):
         with open('parking_lot_state.txt', 'w') as f:
             for item in self.scene().items():
                 if isinstance(item, ParkingSpace) and item.plate_number is not None:
-                    f.write(f'{item.id}:{item.plate_number}:{item.entry_time}:{item.balance}\n')  # Include balance in the file
+                    f.write(f'{item.id}:{item.plate_number}\n')  # Include id in the file
 
     def mousePressEvent(self, event):
         if login_dialog.role == "车主" or login_dialog.role == "管理员":
@@ -183,8 +182,6 @@ class ParkingSpace(QGraphicsRectItem):
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
                 self.entry_time = datetime.now()  # Record the entry time
-                self.scene().views()[0].window().total_cars += 1  # Increment total_cars
-                self.scene().views()[0].window().update_statistics()
                 self.save_state()
             else:
                 reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -216,29 +213,24 @@ class ParkingLot(QMainWindow):
         self.scene = QGraphicsScene(self)
         self.view = QGraphicsView(self.scene, self)
         self.view.setGeometry(0, 0, 1000, 1000)  # Increase the view size
-        self.statistics_label = QLabel(self)
-        self.statistics_label.setGeometry(0, 980, 1000, 20)  # Place the label at the bottom of the window
-        self.total_cars = self.load_total_cars()
 
         self.draw_parking_lot()
         self.load_state()
-
-    def update_statistics(self):
-        total_lots = 40  # Update this if the number of parking spaces changes
-        occupied_lots = sum(1 for item in self.scene.items() if isinstance(item, ParkingSpace) and item.plate_number is not None)
-        remaining_lots = total_lots - occupied_lots
-        total_income = sum(item.balance for item in self.scene.items() if isinstance(item, ParkingSpace))
-        if login_dialog.role == "车主":
-            user_parking_space = next((item for item in self.scene.items() if isinstance(item, ParkingSpace) and item.plate_number == login_dialog.username), None)
-            if user_parking_space is not None:
-                parked_time = datetime.now() - user_parking_space.entry_time
-                current_charge = calculate_fee(user_parking_space.entry_time, datetime.now())  # Update this if the fee calculation changes
-                self.statistics_label.setText(f"剩余车位：{remaining_lots}/{total_lots}, 余额：{user_parking_space.balance}, 停车时间：{parked_time}, 实时费用：{current_charge}")
-            else:
-                self.statistics_label.setText(f"剩余车位：{remaining_lots}/{total_lots}")
-        else:  # login_dialog.role == "管理员"
-            self.statistics_label.setText(f"已占用/空闲/总车位：{occupied_lots}/{remaining_lots}/{total_lots}, 总车流：{self.total_cars}, 总收入：{total_income}")
-        self.statistics_label.setAlignment(Qt.AlignCenter)
+    def load_state(self):
+        try:
+            with open('parking_lot_state.txt', 'r') as f:
+                parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
+                for line in f:
+                    if ':' in line:  # Check if the line contains a colon
+                        id, plate_number, entry_time = line.strip().split(':')
+                        parking_space = parking_spaces[int(id)]
+                        parking_space.plate_number = plate_number
+                        parking_space.entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M:%S.%f")  # Parse the entry time
+                        parking_space.setBrush(QBrush(QColor(255, 0, 0)))
+                        parking_space.text_item = QGraphicsTextItem(parking_space.plate_number, parking_space)
+                        parking_space.text_item.setPos(parking_space.rect().center() - parking_space.text_item.boundingRect().center())
+        except FileNotFoundError:
+            pass
 
     def draw_parking_lot(self):
         self.scene.clear()
@@ -257,23 +249,12 @@ class ParkingLot(QMainWindow):
                 parking_space = ParkingSpace(row * num_columns + column, x, y, space_width, space_height)
                 self.scene.addItem(parking_space)
     
-    def load_total_cars(self):
-        try:
-            with open('stat.txt', 'r') as f:
-                return int(f.read())
-        except FileNotFoundError:
-            return 0
-
-    def save_total_cars(self):
-        with open('stat.txt', 'w') as f:
-            f.write(str(self.total_cars))
-            
     def save_state(self):
         with open('parking_lot_state.txt', 'w') as f:
             for item in self.scene().items():
                 if isinstance(item, ParkingSpace) and item.plate_number is not None:
                     f.write(f'{item.id}:{item.plate_number}:{item.entry_time}\n')  # Include entry time in the file
-        self.save_total_cars()
+
 
     def load_state(self):
         try:
@@ -281,17 +262,14 @@ class ParkingLot(QMainWindow):
                 parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
                 for line in f:
                     if ':' in line:  # Check if the line contains a colon
-                        id, plate_number, entry_time, balance = line.strip().split(':')
+                        id, plate_number = line.strip().split(':')
                         parking_space = parking_spaces[int(id)]
                         parking_space.plate_number = plate_number
-                        parking_space.entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M:%S.%f")  # Parse the entry time
-                        parking_space.balance = float(balance)  # Parse the balance
                         parking_space.setBrush(QBrush(QColor(255, 0, 0)))
                         parking_space.text_item = QGraphicsTextItem(parking_space.plate_number, parking_space)
                         parking_space.text_item.setPos(parking_space.rect().center() - parking_space.text_item.boundingRect().center())
         except FileNotFoundError:
             pass
-        self.update_statistics()
 
     def paintEvent(self, event):
         painter = QPainter(self)
