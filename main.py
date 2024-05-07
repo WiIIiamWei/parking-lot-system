@@ -12,7 +12,8 @@ class LoginDialog(QDialog):
         super().__init__()
 
         self.setWindowTitle("登录")
-        
+        self.role = None  # Add a new attribute to save the role of the current user
+
 
 
         self.username_label = QLabel("用户名")
@@ -50,11 +51,17 @@ class LoginDialog(QDialog):
                 if username == saved_username and password == saved_password :
                     QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
                     self.role = saved_role
+                    self.username = username
                     self.accept()  # Close the login dialog
                     return
             else:
                 QMessageBox.warning(self, "错误", "用户名或密码错误")
-
+        if username == saved_username and password == saved_password :
+            QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
+            self.role = saved_role  # Save the role of the current user
+            self.username = username  # Save the username of the current user
+            self.accept()  # Close the login dialog
+            return
     
     def registnew(self):
 
@@ -63,7 +70,7 @@ class LoginDialog(QDialog):
                 super().__init__()
 
                 
-                self.username_label = QLabel("用户名")
+                self.username_label = QLabel("用户名（车牌号）")
                 self.username_edit = QLineEdit()
 
                 self.password_label = QLabel("密码")
@@ -140,29 +147,28 @@ class ParkingSpace(QGraphicsRectItem):
                     f.write(f'{item.id}:{item.plate_number}\n')  # Include id in the file
 
     def mousePressEvent(self, event):
-        if login_dialog.role == "车主" and self.plate_number is not None:
-            QMessageBox.warning(None, "错误", "你没有权限更改这个车位")
-            return
-        if self.plate_number is None:
-            plate_number, ok = QInputDialog.getText(None, "车牌录入", "请输入车牌号：")
+        if login_dialog.role == "车主":
+            if self.plate_number is not None and self.plate_number != login_dialog.username:
+                QMessageBox.warning(None, "错误", "你没有权限更改这个车位")
+                return
 
-            
-            if ok and plate_number and is_license_plate(plate_number):
-                self.plate_number = plate_number
+            if self.plate_number is None:
+                self.plate_number = login_dialog.username
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
                 self.save_state()
             else:
-                QMessageBox.warning(None, "错误", "请输入正确的车牌号")
-        else:
-            reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.plate_number = None
-                self.setBrush(QBrush(QColor(0, 255, 0)))
-                self.scene().removeItem(self.text_item)
-                self.text_item = None
-                self.save_state()
+                reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.plate_number = None
+                    self.setBrush(QBrush(QColor(0, 255, 0)))
+                    self.scene().removeItem(self.text_item)
+                    self.text_item = None
+        self.save_state()
+
+    
+    
 
     def save_state(self):
         with open('parking_lot_state.txt', 'w') as f:
