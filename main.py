@@ -110,8 +110,6 @@ class LoginDialog(QDialog):
                     QMessageBox.warning(self, "错误", "两次输入的密码不一致")
                     return
 
-                
-
                 # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
                     f.write(f"{username}:{password}:{role}\n")  # Save the role along with the username and password
@@ -147,13 +145,16 @@ class ParkingSpace(QGraphicsRectItem):
             return
         if self.plate_number is None:
             plate_number, ok = QInputDialog.getText(None, "车牌录入", "请输入车牌号：")
+
             
-            if ok and plate_number :
+            if ok and plate_number and is_license_plate(plate_number):
                 self.plate_number = plate_number
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
                 self.save_state()
+            else:
+                QMessageBox.warning(None, "错误", "请输入正确的车牌号")
         else:
             reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
