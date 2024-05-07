@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout,QComboBox
 import sys, re
 from datetime import datetime
+
 # 定义每小时的费用
 COST_PER_HOUR = 10
 
@@ -13,21 +14,21 @@ def calculate_fee(start_time, end_time):
 
     # 计算总费用
     total_fee = total_hours * COST_PER_HOUR
-    if total_fee<=1:
-        total_fee=1
+    if total_fee <= 1:
+        total_fee = 1
 
     return total_fee
+
 def is_license_plate(str):
     pattern = r"^(([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z](([0-9]{5}[DF])|([DF]([A-HJ-NP-Z0-9])[0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳使领]))$"
     return bool(re.match(pattern, str))
+
 class LoginDialog(QDialog):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("登录")
         self.role = None  # Add a new attribute to save the role of the current user
-
-
 
         self.username_label = QLabel("用户名")
         self.username_edit = QLineEdit()
@@ -36,7 +37,6 @@ class LoginDialog(QDialog):
         self.password_edit = QLineEdit()
         self.password_edit.setEchoMode(QLineEdit.Password)
         
-
         self.login_button = QPushButton("登录")
         self.login_button.clicked.connect(self.login)
 
@@ -52,7 +52,6 @@ class LoginDialog(QDialog):
         layout.addWidget(self.register_button)
 
         self.setLayout(layout)
-
 
     def login(self):
         username = self.username_edit.text()
@@ -77,12 +76,10 @@ class LoginDialog(QDialog):
             return
     
     def registnew(self):
-
         class RegisterDialog(QDialog):
             def __init__(self):
                 super().__init__()
 
-                
                 self.username_label = QLabel("用户名（车牌号）")
                 self.username_edit = QLineEdit()
 
@@ -103,7 +100,6 @@ class LoginDialog(QDialog):
                 layout.addWidget(self.password_label)
                 layout.addWidget(self.password_edit)
 
-
                 layout.addWidget(self.confirm_password_label)
                 layout.addWidget(self.confirm_password_edit)
                 
@@ -115,7 +111,6 @@ class LoginDialog(QDialog):
 
                 layout.addWidget(self.register_button)
                 
-
                 self.setLayout(layout)
 
             def register(self):
@@ -125,7 +120,6 @@ class LoginDialog(QDialog):
                 role = self.role_combobox.currentText()  # Get the selected role
                 print(role)
 
-
                 if password != confirm_password:
                     QMessageBox.warning(self, "错误", "两次输入的密码不一致")
                     return
@@ -134,7 +128,6 @@ class LoginDialog(QDialog):
                 with open('./user_information.txt', 'a') as f:
                     f.write(f"{username}:{password}:{role}\n")  # Save the role along with the username and password
 
-                
                 QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
                 # 退出窗口
                 self.accept()
