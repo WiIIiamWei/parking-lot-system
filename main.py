@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QInputDialog, QGraphicsTextItem, QGraphicsRectItem, QMessageBox
-from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtGui import QPainter, QBrush, QColor, QFont
+from PyQt5.QtCore import Qt, QTimer, QTime
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout, QComboBox
 import sys, os
 from datetime import datetime
@@ -42,11 +42,12 @@ class LoginDialog(QDialog):
 
         with open('./user_information.txt', 'r') as f:
             for line in f:
-                saved_username, saved_password, saved_role = line.strip().split(':')
+                saved_username, saved_password, saved_role, saved_balance = line.strip().split(':')
                 if username == saved_username and password == saved_password :
                     QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
                     self.role = saved_role
                     self.username = username
+                    self.balance = int(saved_balance)  # Save the balance of the current user
                     self.accept()  # Close the login dialog
                     self.parking_lot = ParkingLot()  # Create a new ParkingLot instance
                     self.parking_lot.show()  # Show the ParkingLot window
@@ -119,10 +120,9 @@ class LoginDialog(QDialog):
                         
                 # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
-                    f.write(f"{username}:{password}:{role}\n")  # Save the role along with the username and password
+                    f.write(f"{username}:{password}:{role}:0\n")  # Initialize the balance to 0
 
                 QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
-                # 退出窗口
                 self.accept()
 
         dialog = RegisterDialog()
@@ -198,6 +198,49 @@ class ParkingSpace(QGraphicsRectItem):
                 if isinstance(item, ParkingSpace) and item.plate_number is not None:
                     f.write(f'{item.id}:{item.plate_number}\n')
 
+class TopUpDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("充值")
+
+        self.amount_label = QLabel("充值金额")
+        self.amount_edit = QLineEdit()
+
+        self.ok_button = QPushButton('确定')
+        self.ok_button.clicked.connect(self.top_up)
+
+        self.cancel_button = QPushButton('取消')
+        self.cancel_button.clicked.connect(self.close)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.amount_label)
+        layout.addWidget(self.amount_edit)
+        layout.addWidget(self.ok_button)
+        layout.addWidget(self.cancel_button)
+
+        self.setLayout(layout)
+
+    def top_up(self):
+        amount = self.amount_edit.text()
+        if amount.isdigit() and int(amount) > 0:
+            login_dialog.balance += int(amount)
+            self.close()
+    
+            # Update the balance in the text file
+            with open('./user_information.txt', 'r') as f:
+                lines = f.readlines()
+    
+            with open('./user_information.txt', 'w') as f:
+                for line in lines:
+                    username, password, role, balance = line.strip().split(':')
+                    if username == login_dialog.username:
+                        f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
+                    else:
+                        f.write(line)
+        else:
+            QMessageBox.warning(self, "错误", "充值金额必须为正整数")
+            
 class ParkingLot(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -208,16 +251,41 @@ class ParkingLot(QMainWindow):
         self.view = QGraphicsView(self.scene, self)
         self.view.setGeometry(0, 0, 1000, 1000)  # Increase the view size
         self.logout_button = QPushButton('退出登录', self)
-        self.logout_button.setGeometry(900, 20, 80, 30)  # Adjust the position and size as needed
+        self.topup_button = QPushButton('充值', self)
+        self.logout_button.setGeometry(900, 20, 80, 30)
+        self.topup_button.setGeometry(800, 20, 80, 30) 
+        self.bottom_text = QLabel(self)
+        self.bottom_text.setText(f"用户名：{login_dialog.username}，余额：{login_dialog.balance}元")
+        self.bottom_text.setGeometry(0, 970, 1000, 20) 
+        self.bottom_text.setAlignment(Qt.AlignCenter)
+        self.datetime_label = QLabel(self)
+        self.datetime_label.setGeometry(20, 20, 200, 20)
+        
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_window)
+        self.timer.start(1000)
+        
         self.logout_button.clicked.connect(self.logout)
+        self.topup_button.clicked.connect(self.open_top_up_dialog)
 
         self.draw_parking_lot()
         self.load_state()
+        
+    def update_window(self):
+        current_datetime = QTime.currentTime().toString('hh:mm:ss')
+        self.datetime_label.setText(current_datetime)
+        self.bottom_text.setText(f"用户名：{login_dialog.username}，余额：{login_dialog.balance}元")
+        self.update()
         
     def logout(self):
         self.close()
         self.login_dialog = LoginDialog()
         self.login_dialog.show()
+        self.bottom_text.setText("")
+        
+    def open_top_up_dialog(self):
+        self.top_up_dialog = TopUpDialog()
+        self.top_up_dialog.exec_()
         
     def load_state(self):
         try:
