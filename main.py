@@ -113,7 +113,7 @@ class LoginDialog(QDialog):
                 # 检查用户名是否已经存在
                 with open('./user_information.txt', 'r') as f:
                     for line in f:
-                        saved_username, _, _ = line.strip().split(':')
+                        saved_username, _, _, _ = line.strip().split(':')
                         if username == saved_username:
                             QMessageBox.warning(self, "错误", "用户名已存在")
                             return
@@ -185,6 +185,19 @@ class ParkingSpace(QGraphicsRectItem):
                     fee = calculate_fee(self.entry_time, datetime.now())  # Calculate the fee
     
                     QMessageBox.information(None, "停车时间", f"停车时间：{parking_duration}，费用：{fee}")
+                    # Update the user balance
+                    if login_dialog.role == "车主":
+                        login_dialog.balance -= fee
+                        with open('./user_information.txt', 'r') as f:
+                            lines = f.readlines()
+    
+                        with open('./user_information.txt', 'w') as f:
+                            for line in lines:
+                                username, password, role, balance = line.strip().split(':')
+                                if username == login_dialog.username:
+                                    f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
+                                else:
+                                    f.write(line)
                     self.plate_number = None
                     self.setBrush(QBrush(QColor(0, 255, 0)))
                     self.scene().removeItem(self.text_item)
