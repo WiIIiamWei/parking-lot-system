@@ -122,6 +122,10 @@ class LoginDialog(QDialog):
                 if password != confirm_password:
                     QMessageBox.warning(self, "错误", "两次输入的密码不一致")
                     return
+                # 如果角色是车主，检查用户名是否是车牌号
+                if role == "车主" and not is_license_plate(username):
+                    QMessageBox.warning(self, "错误", "用户名必须是车牌号")
+                    return
                 # 检查用户名是否已经存在
                 with open('./user_information.txt', 'r') as f:
                     for line in f:
