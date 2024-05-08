@@ -118,12 +118,17 @@ class LoginDialog(QDialog):
                 password = self.password_edit.text()
                 confirm_password = self.confirm_password_edit.text()
                 role = self.role_combobox.currentText()  # Get the selected role
-                print(role)
 
                 if password != confirm_password:
                     QMessageBox.warning(self, "错误", "两次输入的密码不一致")
                     return
-
+                # 检查用户名是否已经存在
+                with open('./user_information.txt', 'r') as f:
+                    for line in f:
+                        saved_username, _, _ = line.strip().split(':')
+                        if username == saved_username:
+                            QMessageBox.warning(self, "错误", "用户名已存在")
+                            return
                 # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
                     f.write(f"{username}:{password}:{role}\n")  # Save the role along with the username and password
@@ -209,7 +214,6 @@ class ParkingLot(QMainWindow):
 
         self.setWindowTitle("停车场管理系统")
         self.setGeometry(100, 100, 1000, 1000)  # Increase the window size
-
         self.scene = QGraphicsScene(self)
         self.view = QGraphicsView(self.scene, self)
         self.view.setGeometry(0, 0, 1000, 1000)  # Increase the view size
