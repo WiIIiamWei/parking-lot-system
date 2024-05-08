@@ -5,6 +5,27 @@ from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout
 import sys, os
 from datetime import datetime
 from misc import is_license_plate, calculate_fee
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+import time
+
+class FileChangeHandler(FileSystemEventHandler):
+    def on_modified(self, event):
+        if event.is_directory:
+            return
+        filename = event.src_path
+        if filename in ['./user_information.txt', './parking_lot.txt']:
+            with open(filename, 'r') as f:
+                new_content = f.readlines()
+            with open('./history.txt', 'a') as f:
+                if filename == './user_information.txt':
+                    f.write('user_information.txt was modified:\n')
+                else:
+                    f.write('parking_lot.txt was modified:\n')
+                for line in new_content:
+                    f.write(line + 'modify\n')
+
+        
 
 class LoginDialog(QDialog):
     def __init__(self):
@@ -43,7 +64,7 @@ class LoginDialog(QDialog):
 
         with open('./user_information.txt', 'r') as f:
             for line in f:
-                saved_username, saved_password, saved_role, saved_balance, entry_time = line.strip().split(':')
+                saved_username, saved_password, saved_role, saved_balance, entry_time = line.strip().split(':',4)
                 if username == saved_username and password == saved_password :
                     QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
                     self.role = saved_role
@@ -114,11 +135,12 @@ class LoginDialog(QDialog):
                     
                 # 检查用户名是否已经存在
                 with open('./user_information.txt', 'r') as f:
-                    for line in f:
-                        saved_username, _, _, _ = line.strip().split(':',3)
-                        if username == saved_username:
-                            QMessageBox.warning(self, "错误", "用户名已存在")
-                            return
+                    if not f.read():
+                        for line in f:
+                            saved_username, _, _, _ = line.strip().split(':',3)
+                            if username == saved_username:
+                                QMessageBox.warning(self, "错误", "用户名已存在")
+                                return
                         
                 # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
@@ -181,7 +203,7 @@ class ParkingSpace(QGraphicsRectItem):
                     lines = f.readlines()
                 with open('./user_information.txt', 'w') as f:
                     for line in lines:
-                        username, password, role, balance, _ = line.strip().split(':')
+                        username, password, role, balance, _ = line.strip().split(':',4)
                         if username == self.plate_number:
                             f.write(f"{username}:{password}:{role}:{balance}:{self.entry_time}\n")
                         else:
@@ -206,7 +228,6 @@ class ParkingSpace(QGraphicsRectItem):
     
                         with open('./user_information.txt', 'w') as f:
                             for line in lines:
-                                print(line)
                                 username, password, role, balance,entry_time= line.strip().split(':',4)
                                 if username == login_dialog.username:
                                     f.write(f"{username}:{password}:{role}:{login_dialog.balance}:None\n")
@@ -260,7 +281,7 @@ class TopUpDialog(QDialog):
     
             with open('./user_information.txt', 'w') as f:
                 for line in lines:
-                    username, password, role, balance = line.strip().split(':')
+                    username, password, role, balance = line.strip().split(':',3)
                     if username == login_dialog.username:
                         f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
                     else:
@@ -320,7 +341,7 @@ class ParkingLot(QMainWindow):
                 parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
                 for line in f:
                     if ':' in line:  # Check if the line contains a colon
-                        id, plate_number, entry_time = line.strip().split(':')
+                        id, plate_number, entry_time = line.strip().split(':',2)
                         parking_space = parking_spaces[int(id)]
                         parking_space.plate_number = plate_number
                         parking_space.entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M:%S.%f")  # Parse the entry time
@@ -360,7 +381,7 @@ class ParkingLot(QMainWindow):
                 parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
                 for line in f:
                     if ':' in line:  # Check if the line contains a colon
-                        id, plate_number = line.strip().split(':')
+                        id, plate_number = line.strip().split(':',1)
                         parking_space = parking_spaces[int(id)]
                         parking_space.plate_number = plate_number
                         parking_space.setBrush(QBrush(QColor(255, 0, 0)))
@@ -407,4 +428,15 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     login_dialog = LoginDialog()
     login_dialog.exec_()  # No need to check if the login was successful here
-    sys.exit(app.exec_())
+
+    observer = Observer()
+    event_handler = FileChangeHandler()
+    observer.schedule(event_handler, '.', recursive=False)
+    observer.start()
+
+    try:
+        sys.exit(app.exec_())
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
+    
