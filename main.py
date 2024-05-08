@@ -175,6 +175,8 @@ class ParkingSpace(QGraphicsRectItem):
             if self.plate_number is None:
                 if login_dialog.role == "管理员":
                     text, ok = QInputDialog.getText(None, '输入车牌号', '请输入车牌号:')
+                    if not ok:
+                        return
                     if ok and is_license_plate(text):
                         # Check if the car is already parked
                         for item in self.scene().items():
