@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QInputDialog, QGraphicsTextItem, QGraphicsRectItem, QMessageBox
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
 from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout,QComboBox
+from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout, QComboBox
 import sys, os
 from datetime import datetime
 from misc import is_license_plate, calculate_fee
@@ -39,7 +39,7 @@ class LoginDialog(QDialog):
     def login(self):
         username = self.username_edit.text()
         password = self.password_edit.text()
-        # 检查用户名和密码是否正确
+
         with open('./user_information.txt', 'r') as f:
             for line in f:
                 saved_username, saved_password, saved_role = line.strip().split(':')
@@ -48,15 +48,11 @@ class LoginDialog(QDialog):
                     self.role = saved_role
                     self.username = username
                     self.accept()  # Close the login dialog
+                    self.parking_lot = ParkingLot()  # Create a new ParkingLot instance
+                    self.parking_lot.show()  # Show the ParkingLot window
                     return
             else:
                 QMessageBox.warning(self, "错误", "用户名或密码错误")
-        if username == saved_username and password == saved_password :
-            QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
-            self.role = saved_role  # Save the role of the current user
-            self.username = username  # Save the username of the current user
-            self.accept()  # Close the login dialog
-            return
     
     def registnew(self):
         class RegisterDialog(QDialog):
@@ -211,9 +207,18 @@ class ParkingLot(QMainWindow):
         self.scene = QGraphicsScene(self)
         self.view = QGraphicsView(self.scene, self)
         self.view.setGeometry(0, 0, 1000, 1000)  # Increase the view size
+        self.logout_button = QPushButton('退出登录', self)
+        self.logout_button.setGeometry(900, 20, 80, 30)  # Adjust the position and size as needed
+        self.logout_button.clicked.connect(self.logout)
 
         self.draw_parking_lot()
         self.load_state()
+        
+    def logout(self):
+        self.close()
+        self.login_dialog = LoginDialog()
+        self.login_dialog.show()
+        
     def load_state(self):
         try:
             with open('parking_lot_state.txt', 'r') as f:
@@ -306,7 +311,5 @@ class ParkingLot(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     login_dialog = LoginDialog()
-    if login_dialog.exec_() == QDialog.Accepted:  # Check if the login was successful
-        parking_lot = ParkingLot()
-        parking_lot.show()
+    login_dialog.exec_()  # No need to check if the login was successful here
     sys.exit(app.exec_())
