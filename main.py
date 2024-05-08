@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphics
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
 from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout,QComboBox
-import sys, re
+import sys, re, os
 from datetime import datetime
 
 # 定义每小时的费用
@@ -126,6 +126,10 @@ class LoginDialog(QDialog):
                 if role == "车主" and not is_license_plate(username):
                     QMessageBox.warning(self, "错误", "用户名必须是车牌号")
                     return
+                
+                if not os.path.exists('./user_information.txt'):
+                    open('./user_information.txt', 'w').close()
+                    
                 # 检查用户名是否已经存在
                 with open('./user_information.txt', 'r') as f:
                     for line in f:
@@ -133,6 +137,7 @@ class LoginDialog(QDialog):
                         if username == saved_username:
                             QMessageBox.warning(self, "错误", "用户名已存在")
                             return
+                        
                 # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
                     f.write(f"{username}:{password}:{role}\n")  # Save the role along with the username and password
