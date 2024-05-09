@@ -389,6 +389,7 @@ class ParkingLot(QMainWindow):
             if isinstance(item, ParkingSpace):
                 item.id_text_item.setPos(item.rect().topLeft())
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     login_dialog = LoginDialog()
