@@ -9,7 +9,6 @@ from misc import is_license_plate, calculate_fee
 class LoginDialog(QDialog):
     def __init__(self):
         super().__init__()
-        self.entry_time = None
 
         self.setWindowTitle("登录")
         self.role = None  # Add a new attribute to save the role of the current user
@@ -43,7 +42,7 @@ class LoginDialog(QDialog):
 
         with open('./user_information.txt', 'r') as f:
             for line in f:
-                saved_username, saved_password, saved_role, saved_balance, entry_time = line.strip().split(':')
+                saved_username, saved_password, saved_role, saved_balance = line.strip().split(':')
                 if username == saved_username and password == saved_password :
                     QMessageBox.information(self, "成功", f"登录成功，用户名：{username}")
                     self.role = saved_role
@@ -53,7 +52,6 @@ class LoginDialog(QDialog):
                     self.parking_lot = ParkingLot()  # Create a new ParkingLot instance
                     self.parking_lot.show()  # Show the ParkingLot window
                     return
-                
             else:
                 QMessageBox.warning(self, "错误", "用户名或密码错误")
     
@@ -115,14 +113,14 @@ class LoginDialog(QDialog):
                 # 检查用户名是否已经存在
                 with open('./user_information.txt', 'r') as f:
                     for line in f:
-                        saved_username, _, _, _ = line.strip().split(':',3)
+                        saved_username, _, _, _ = line.strip().split(':')
                         if username == saved_username:
                             QMessageBox.warning(self, "错误", "用户名已存在")
                             return
                         
                 # 保存新的用户名和密码
                 with open('./user_information.txt', 'a') as f:
-                    f.write(f"{username}:{password}:{role}:0:None\n")  # Initialize the balance to 0
+                    f.write(f"{username}:{password}:{role}:0\n")  # Initialize the balance to 0
 
                 QMessageBox.information(self, "成功", f"注册成功，用户名：{username}")
                 self.accept()
@@ -165,7 +163,6 @@ class ParkingSpace(QGraphicsRectItem):
                                 QMessageBox.warning(None, "错误", "这辆车已经停在停车场中")
                                 return
                         self.plate_number = text
-                        
                     else:
                         QMessageBox.warning(None, "错误", "请输入有效的车牌号")
                         return
@@ -176,16 +173,6 @@ class ParkingSpace(QGraphicsRectItem):
                             QMessageBox.warning(None, "错误", "你的车已经停在停车场中")
                             return
                     self.plate_number = login_dialog.username
-                self.entry_time = datetime.now()  # Record the entry time
-                with open('./user_information.txt', 'r') as f:
-                    lines = f.readlines()
-                with open('./user_information.txt', 'w') as f:
-                    for line in lines:
-                        username, password, role, balance, _ = line.strip().split(':')
-                        if username == self.plate_number:
-                            f.write(f"{username}:{password}:{role}:{balance}:{self.entry_time}\n")
-                        else:
-                            f.write(line)
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
@@ -206,10 +193,9 @@ class ParkingSpace(QGraphicsRectItem):
     
                         with open('./user_information.txt', 'w') as f:
                             for line in lines:
-                                print(line)
-                                username, password, role, balance,entry_time= line.strip().split(':',4)
+                                username, password, role, balance = line.strip().split(':')
                                 if username == login_dialog.username:
-                                    f.write(f"{username}:{password}:{role}:{login_dialog.balance}:None\n")
+                                    f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
                                 else:
                                     f.write(line)
                     self.plate_number = None
