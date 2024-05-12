@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, QTimer, QTime
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout, QComboBox
 import sys, os
 from datetime import datetime
-from misc import is_license_plate, calculate_fee
+from misc import is_license_plate, calculate_fee, show_user_information, show_parking_lot_plate
 
 class LoginDialog(QDialog):
     def __init__(self):
@@ -51,10 +51,15 @@ class LoginDialog(QDialog):
                     self.accept()  # Close the login dialog
                     self.parking_lot = ParkingLot()  # Create a new ParkingLot instance
                     self.parking_lot.show()  # Show the ParkingLot window
+                    if self.role=="管理员":
+                        #使用ManagerDialog并打开
+                        self.manager_dialog = ManageDialog()
+                        self.manager_dialog.exec_()
                     return
+                
             else:
                 QMessageBox.warning(self, "错误", "用户名或密码错误")
-    
+        
     def registnew(self):
         class RegisterDialog(QDialog):
             def __init__(self):
@@ -346,7 +351,7 @@ class ParkingLot(QMainWindow):
                 parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
                 for line in f:
                     if ':' in line:  # Check if the line contains a colon
-                        id, plate_number = line.strip().split(':')
+                        id, plate_number,_ = line.strip().split(':',2)
                         parking_space = parking_spaces[int(id)]
                         parking_space.plate_number = plate_number
                         parking_space.setBrush(QBrush(QColor(255, 0, 0)))
@@ -388,7 +393,26 @@ class ParkingLot(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, ParkingSpace):
                 item.id_text_item.setPos(item.rect().topLeft())
+class ManageDialog(QDialog):
+    def __init__(self):
+        super().__init__()
 
+        text_parking_lot_state = show_parking_lot_plate()
+        text_user_information = show_user_information()
+
+        self.setWindowTitle("停车场管理")
+        self.parking_lot_state = QLabel(text_parking_lot_state)
+        self.user_information = QLabel(text_user_information)
+        # 创建一个 QVBoxLayout 对象
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("车位状态"))
+        # 将 self.parking_lot_state 添加到布局中
+        layout.addWidget(self.parking_lot_state)
+        layout.addWidget(QLabel("用户信息"))
+        # 将 self.user_information 添加到布局中
+        layout.addWidget(self.user_information)
+        # 将布局设置为对话框的布局
+        self.setLayout(layout)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -18,5 +18,25 @@ def is_license_plate(str):
     pattern = r"^(([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z](([0-9]{5}[DF])|([DF]([A-HJ-NP-Z0-9])[0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳使领]))$"
     return bool(re.match(pattern, str))
 
+def show_user_information():
+    results = []
+    with open('user_information.txt', 'r') as f:
+        parking_lot = f.readlines()
+        for i, line in enumerate(parking_lot):
+            plate, car,role,money= line.split(':',3)
+            if role=="车主":
+                results.append(str(f"车牌号：{plate},账号：{car},余额：{money}"))
+    return '\n'.join(results)
+
+def show_parking_lot_plate():
+    results = []
+    with open('parking_lot_state.txt', 'r') as f:
+        parking_lot = f.readlines()
+        for i, line in enumerate(parking_lot):
+            plate, car,_= line.split(':',2)
+            results.append(str(f"车位：{plate},车主：{car}"))
+    return '\n'.join(results)
+
+
 
 
