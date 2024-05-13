@@ -269,7 +269,7 @@ class ParkingLot(QMainWindow):
         self.scene = QGraphicsScene(self)
         self.view = QGraphicsView(self.scene, self)
         self.view.setGeometry(0, 0, 1000, 1000)  # Increase the view size
-        self.logout_button = QPushButton('退出登录', self)
+        self.logout_button = QPushButton('退出系统', self)
         self.topup_button = QPushButton('充值', self)
         self.logout_button.setGeometry(900, 20, 80, 30)
         self.topup_button.setGeometry(800, 20, 80, 30) 
@@ -297,10 +297,7 @@ class ParkingLot(QMainWindow):
         self.update()
         
     def logout(self):
-        self.close()
-        self.login_dialog = LoginDialog()
-        self.login_dialog.show()
-        self.bottom_text.setText("")
+        sys.exit()
         
     def open_top_up_dialog(self):
         self.top_up_dialog = TopUpDialog()
