@@ -157,7 +157,18 @@ class ParkingSpace(QGraphicsRectItem):
                 return
     
             if self.plate_number is None:
-                if login_dialog.role == "管理员":
+                if login_dialog.role == "车主":
+                    # Check if the user has enough balance
+                    if login_dialog.balance <= 0:
+                        QMessageBox.warning(None, "错误", "你的余额不足，请充值后再停车")
+                        return
+                    # Check if the car is already parked
+                    for item in self.scene().items():
+                        if isinstance(item, ParkingSpace) and item.plate_number == login_dialog.username:
+                            QMessageBox.warning(None, "错误", "你的车已经停在停车场中")
+                            return
+                    self.plate_number = login_dialog.username
+                elif login_dialog.role == "管理员":
                     text, ok = QInputDialog.getText(None, '输入车牌号', '请输入车牌号:')
                     if not ok:
                         return
@@ -171,19 +182,13 @@ class ParkingSpace(QGraphicsRectItem):
                     else:
                         QMessageBox.warning(None, "错误", "请输入有效的车牌号")
                         return
-                else:
-                    # Check if the car is already parked
-                    for item in self.scene().items():
-                        if isinstance(item, ParkingSpace) and item.plate_number == login_dialog.username:
-                            QMessageBox.warning(None, "错误", "你的车已经停在停车场中")
-                            return
-                    self.plate_number = login_dialog.username
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
                 self.entry_time = datetime.now()  # Record the entry time
                 self.save_state()
             else:
+                # ... rest of your code ...
                 reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     with open('parking_lot_state.txt', 'r') as f:
