@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QInputDialog, QGraphicsTextItem, QGraphicsRectItem, QMessageBox
-from PyQt5.QtGui import QPainter, QBrush, QColor, QFont
-from PyQt5.QtCore import Qt, QTimer, QTime
+from PyQt5.QtGui import QPainter, QBrush, QColor
+from PyQt5.QtCore import Qt, QTimer, QDateTime
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout, QComboBox
 import sys, os
 from datetime import datetime
@@ -51,10 +51,6 @@ class LoginDialog(QDialog):
                     self.accept()  # Close the login dialog
                     self.parking_lot = ParkingLot()  # Create a new ParkingLot instance
                     self.parking_lot.show()  # Show the ParkingLot window
-                    if self.role=="管理员":
-                        #使用ManagerDialog并打开
-                        self.manager_dialog = ManageDialog()
-                        self.manager_dialog.exec_()
                     return
                 
             else:
@@ -188,7 +184,6 @@ class ParkingSpace(QGraphicsRectItem):
                 self.entry_time = datetime.now()  # Record the entry time
                 self.save_state()
             else:
-                # ... rest of your code ...
                 reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     with open('parking_lot_state.txt', 'r') as f:
@@ -275,34 +270,46 @@ class ParkingLot(QMainWindow):
         self.view = QGraphicsView(self.scene, self)
         self.view.setGeometry(0, 0, 1000, 1000)  # Increase the view size
         self.logout_button = QPushButton('退出系统', self)
-        self.topup_button = QPushButton('充值', self)
         self.logout_button.setGeometry(900, 20, 80, 30)
-        self.topup_button.setGeometry(800, 20, 80, 30) 
         self.bottom_text = QLabel(self)
         self.bottom_text.setText(f"用户名：{login_dialog.username}，余额：{login_dialog.balance}元")
         self.bottom_text.setGeometry(0, 970, 1000, 20) 
         self.bottom_text.setAlignment(Qt.AlignCenter)
         self.datetime_label = QLabel(self)
         self.datetime_label.setGeometry(20, 20, 200, 20)
+        self.action_button = QPushButton('充值', self)
+        self.action_button.setGeometry(800, 20, 80, 30) 
+        self.action_button.clicked.connect(self.open_top_up_dialog)
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_window)
         self.timer.start(1000)
         
         self.logout_button.clicked.connect(self.logout)
-        self.topup_button.clicked.connect(self.open_top_up_dialog)
 
         self.draw_parking_lot()
         self.load_state()
         
     def update_window(self):
-        current_datetime = QTime.currentTime().toString('hh:mm:ss')
+        current_datetime = QDateTime.currentDateTime().toString('yyyy-MM-dd hh:mm:ss')
         self.datetime_label.setText(current_datetime)
         self.bottom_text.setText(f"用户名：{login_dialog.username}，余额：{login_dialog.balance}元")
+        if login_dialog.role == "管理员":
+            self.action_button.setText('统计信息')  # Change the button text to '统计信息'
+            self.action_button.clicked.disconnect()  # Disconnect the previous method
+            self.action_button.clicked.connect(self.open_manage_dialog)  # Connect the new method
+        else:
+            self.action_button.setText('充值')  # Change the button text to '充值'
+            self.action_button.clicked.disconnect()  # Disconnect the previous method
+            self.action_button.clicked.connect(self.open_top_up_dialog)  # Connect the new method
         self.update()
         
     def logout(self):
         sys.exit()
+    
+    def open_manage_dialog(self):
+        self.manage_dialog = ManageDialog()
+        self.manage_dialog.exec_()
         
     def open_top_up_dialog(self):
         self.top_up_dialog = TopUpDialog()
@@ -396,6 +403,7 @@ class ParkingLot(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, ParkingSpace):
                 item.id_text_item.setPos(item.rect().topLeft())
+
 class ManageDialog(QDialog):
     def __init__(self):
         super().__init__()
