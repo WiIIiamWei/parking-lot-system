@@ -99,7 +99,9 @@ class LoginDialog(QDialog):
                 password = self.password_edit.text()
                 confirm_password = self.confirm_password_edit.text()
                 role = self.role_combobox.currentText()  # Get the selected role
-
+                if not username or not password:
+                    QMessageBox.warning(None, "错误", "用户名和密码不能为空")
+                    return
                 if password != confirm_password:
                     QMessageBox.warning(self, "错误", "两次输入的密码不一致")
                     return
