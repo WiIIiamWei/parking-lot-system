@@ -148,7 +148,7 @@ class ParkingSpace(QGraphicsRectItem):
         with open('parking_lot_state.txt', 'w') as f:
             for item in self.scene().items():
                 if isinstance(item, ParkingSpace) and item.plate_number is not None:
-                    f.write(f'{item.id}:{item.plate_number}\n')  # Include id in the file
+                    f.write(f'{item.id}:{item.plate_number}:{item.entry_time}\n')  # Include entry time in the file
 
     def mousePressEvent(self, event):
         if login_dialog.role == "车主" or login_dialog.role == "管理员":
@@ -210,11 +210,6 @@ class ParkingSpace(QGraphicsRectItem):
                     self.entry_time = None  # Reset the entry time
             self.save_state()
 
-    def save_state(self):
-        with open('parking_lot_state.txt', 'w') as f:
-            for item in self.scene().items():
-                if isinstance(item, ParkingSpace) and item.plate_number is not None:
-                    f.write(f'{item.id}:{item.plate_number}\n')
 
 class TopUpDialog(QDialog):
     def __init__(self):
