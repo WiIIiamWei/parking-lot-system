@@ -271,6 +271,7 @@ class ParkingLot(QMainWindow):
         self.view.setGeometry(0, 0, 1000, 1000)  # Increase the view size
         self.logout_button = QPushButton('退出系统', self)
         self.logout_button.setGeometry(900, 20, 80, 30)
+        self.logout_button.clicked.connect(self.logout)
         self.bottom_text = QLabel(self)
         self.bottom_text.setText(f"用户名：{login_dialog.username}，余额：{login_dialog.balance}元")
         self.bottom_text.setGeometry(0, 970, 1000, 20) 
@@ -284,8 +285,6 @@ class ParkingLot(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_window)
         self.timer.start(1000)
-        
-        self.logout_button.clicked.connect(self.logout)
 
         self.draw_parking_lot()
         self.load_state()
