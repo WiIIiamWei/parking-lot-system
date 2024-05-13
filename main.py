@@ -140,6 +140,7 @@ class ParkingSpace(QGraphicsRectItem):
         self.id = id  # Add id attribute
         self.id_text_item = QGraphicsTextItem(str(self.id), self)  # Display id on the parking space
         self.id_text_item.setPos(self.rect().topLeft())
+        print("ENTRY TIME RESET (at class ParkingSpace)")   # DEBUG MSG
         self.entry_time = None
     
     def save_state(self):
@@ -183,6 +184,7 @@ class ParkingSpace(QGraphicsRectItem):
                 self.setBrush(QBrush(QColor(255, 0, 0)))
                 self.text_item = QGraphicsTextItem(self.plate_number, self)
                 self.text_item.setPos(self.rect().center() - self.text_item.boundingRect().center())
+                print("ENTRY TIME SET (at mousePressEvent)")   # DEBUG MSG
                 self.entry_time = datetime.now()  # Record the entry time
                 self.save_state()
             else:
@@ -215,6 +217,7 @@ class ParkingSpace(QGraphicsRectItem):
                     self.setBrush(QBrush(QColor(0, 255, 0)))
                     self.scene().removeItem(self.text_item)
                     self.text_item = None
+                    print("ENTRY TIME RESET (at mousePressEvent)")   # DEBUG MSG
                     self.entry_time = None  # Reset the entry time
             self.save_state()
 
@@ -322,6 +325,7 @@ class ParkingLot(QMainWindow):
                 parking_spaces = {item.id: item for item in reversed(self.scene.items()) if isinstance(item, ParkingSpace)}
                 for line in f:
                     if ':' in line:  # Check if the line contains a colon
+                        print("ENTRY TIME LOAD (at ParkingState -> load_state)")   # DEBUG MSG
                         id, plate_number, entry_time = line.strip().split(':')
                         parking_space = parking_spaces[int(id)]
                         parking_space.plate_number = plate_number
@@ -353,6 +357,7 @@ class ParkingLot(QMainWindow):
         with open('parking_lot_state.txt', 'w') as f:
             for item in self.scene().items():
                 if isinstance(item, ParkingSpace) and item.plate_number is not None:
+                    print("ENTRY TIME SAVED (at save_state)")   # DEBUG MSG 
                     f.write(f'{item.id}:{item.plate_number}:{item.entry_time}\n')  # Include entry time in the file
 
 
