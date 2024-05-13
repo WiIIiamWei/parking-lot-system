@@ -186,23 +186,29 @@ class ParkingSpace(QGraphicsRectItem):
             else:
                 reply = QMessageBox.question(None, '移除该车', '确定要移除该车？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
-                    parking_duration = datetime.now() - self.entry_time  # Calculate the parking duration
-                    fee = calculate_fee(self.entry_time, datetime.now())  # Calculate the fee
-    
-                    QMessageBox.information(None, "停车时间", f"停车时间：{parking_duration}，费用：{fee}")
-                    # Update the user balance
-                    if login_dialog.role == "车主":
-                        login_dialog.balance -= fee
-                        with open('./user_information.txt', 'r') as f:
-                            lines = f.readlines()
-    
-                        with open('./user_information.txt', 'w') as f:
-                            for line in lines:
-                                username, password, role, balance = line.strip().split(':')
-                                if username == login_dialog.username:
-                                    f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
-                                else:
-                                    f.write(line)
+                    with open('parking_lot_state.txt', 'r') as f:
+                        for lines in f:
+                            _, plate_number, entry_time = lines.strip().split(':',2)
+                            if plate_number==self.plate_number:
+                                self.entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M:%S.%f")
+
+                                parking_duration = datetime.now() - self.entry_time  # Calculate the parking duration
+                                fee = calculate_fee(self.entry_time, datetime.now())  # Calculate the fee
+                
+                                QMessageBox.information(None, "停车时间", f"停车时间：{parking_duration}，费用：{fee}")
+                                # Update the user balance
+                                if login_dialog.role == "车主":
+                                    login_dialog.balance -= fee
+                                    with open('./user_information.txt', 'r') as f:
+                                        lines = f.readlines()
+                
+                                    with open('./user_information.txt', 'w') as f:
+                                        for line in lines:
+                                            username, password, role, balance = line.strip().split(':')
+                                            if username == login_dialog.username:
+                                                f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
+                                            else:
+                                                f.write(line)
                     self.plate_number = None
                     self.setBrush(QBrush(QColor(0, 255, 0)))
                     self.scene().removeItem(self.text_item)
