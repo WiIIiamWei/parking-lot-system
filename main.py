@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QInputDialog, QGraphicsTextItem, QGraphicsRectItem, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QInputDialog, QGraphicsTextItem, QGraphicsRectItem, QMessageBox, QWidget
 from PyQt5.QtGui import QPainter, QBrush, QColor
 from PyQt5.QtCore import Qt, QTimer, QDateTime
-from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout, QComboBox
+from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout, QComboBox, QSpinBox
 import sys, os
 from datetime import datetime
 from misc import is_license_plate, calculate_fee, show_user_information, show_parking_lot_plate
@@ -286,6 +286,10 @@ class ParkingLot(QMainWindow):
         self.action_button = QPushButton('充值', self)
         self.action_button.setGeometry(800, 20, 80, 30) 
         self.action_button.clicked.connect(self.open_top_up_dialog)
+        self.query_button = QPushButton('查询', self)
+        self.query_button.setGeometry(700, 20, 80, 30)
+        self.query_button.clicked.connect(self.open_query_dialog)
+        self.query_button.hide()
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_window)
@@ -302,6 +306,7 @@ class ParkingLot(QMainWindow):
             self.action_button.setText('统计信息')  # Change the button text to '统计信息'
             self.action_button.clicked.disconnect()  # Disconnect the previous method
             self.action_button.clicked.connect(self.open_manage_dialog)  # Connect the new method
+            self.query_button.show()
         else:
             self.action_button.setText('充值')  # Change the button text to '充值'
             self.action_button.clicked.disconnect()  # Disconnect the previous method
@@ -318,6 +323,10 @@ class ParkingLot(QMainWindow):
     def open_top_up_dialog(self):
         self.top_up_dialog = TopUpDialog()
         self.top_up_dialog.exec_()
+        
+    def open_query_dialog(self):
+        self.query_dialog = QueryDialog()
+        self.query_dialog.exec_()
         
     def load_state(self):
         try:
@@ -430,6 +439,63 @@ class ManageDialog(QDialog):
         layout.addWidget(self.user_information)
         # 将布局设置为对话框的布局
         self.setLayout(layout)
+        
+class EditBalanceDialog(QDialog):
+    def __init__(self, plate, balance):
+        super().__init__()
+
+        self.plate = plate
+        self.setWindowTitle("编辑余额")
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel(f"车牌号：{plate}，余额：{balance}元"))
+        self.balance_edit = QSpinBox()
+        self.balance_edit.setRange(-999999, 999999)  # Set the range to accept positive/negative integers
+        layout.addWidget(self.balance_edit)
+        self.ok_button = QPushButton("确定")
+        self.ok_button.clicked.connect(self.accept)
+        layout.addWidget(self.ok_button)
+        self.cancel_button = QPushButton("取消")
+        self.cancel_button.clicked.connect(self.reject)
+        layout.addWidget(self.cancel_button)
+        self.setLayout(layout)
+
+    def accept(self):
+        with open('user_information.txt', 'r') as f:
+            lines = f.readlines()
+        with open('user_information.txt', 'w') as f:
+            for line in lines:
+                if line.startswith(self.plate + ':'):
+                    parts = line.split(':', 3)
+                    parts[3] = str(self.balance_edit.value()) + '\n'
+                    line = ':'.join(parts)
+                f.write(line)
+        super().accept()
+
+class QueryDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("查询")
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("请输入车牌号"))
+        self.plate_number_edit = QLineEdit()
+        layout.addWidget(self.plate_number_edit)
+        self.query_button = QPushButton("查询")
+        self.query_button.clicked.connect(self.query)
+        layout.addWidget(self.query_button)
+        self.setLayout(layout)
+
+    def query(self):
+        plate = self.plate_number_edit.text()
+        with open('user_information.txt', 'r') as f:
+            for line in f:
+                if line.startswith(plate + ':'):
+                    _, _, _, balance = line.split(':', 3)
+                    dialog = EditBalanceDialog(plate, balance)
+                    if dialog.exec_() == QDialog.Accepted:
+                        # Update the balance in the file
+                        pass  # Add your code here
+                    break
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
