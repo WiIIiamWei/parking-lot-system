@@ -303,6 +303,9 @@ class ParkingLot(QMainWindow):
         self.query_button.setGeometry(700, 20, 80, 30)
         self.query_button.clicked.connect(self.open_query_dialog)
         self.query_button.hide()
+        self.help_text = QLabel(self)
+        self.help_text.setText("点击车位：停车/取车")
+        self.help_text.setGeometry(400, 20, 200, 20)
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_window)
