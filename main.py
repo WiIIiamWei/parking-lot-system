@@ -211,6 +211,7 @@ class ParkingSpace(QGraphicsRectItem):
                                             reply = QMessageBox.question(None, '扣费', '确定要扣除该用户的余额？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                                             if reply == QMessageBox.Yes:
                                                 new_balance = int(balance) - fee
+                                                login_dialog.balance = new_balance
                                                 with open('./user_information.txt', 'w') as f:
                                                     for line in lines:
                                                         if line.startswith(username + ':'):
@@ -219,6 +220,7 @@ class ParkingSpace(QGraphicsRectItem):
                                                             f.write(line)
                                         else:
                                             new_balance = int(balance) - fee
+                                            login_dialog.balance = new_balance
                                             with open('./user_information.txt', 'w') as f:
                                                 for line in lines:
                                                     if line.startswith(username + ':'):
@@ -233,7 +235,6 @@ class ParkingSpace(QGraphicsRectItem):
                     print("ENTRY TIME RESET (at mousePressEvent)")   # DEBUG MSG
                     self.entry_time = None  # Reset the entry time
             self.save_state()
-
 
 class TopUpDialog(QDialog):
     def __init__(self):
@@ -313,16 +314,17 @@ class ParkingLot(QMainWindow):
     def update_window(self):
         current_datetime = QDateTime.currentDateTime().toString('yyyy-MM-dd hh:mm:ss')
         self.datetime_label.setText(current_datetime)
-        self.bottom_text.setText(f"用户名：{login_dialog.username}，余额：{login_dialog.balance}元")
         if login_dialog.role == "管理员":
             self.action_button.setText('统计信息')  # Change the button text to '统计信息'
             self.action_button.clicked.disconnect()  # Disconnect the previous method
             self.action_button.clicked.connect(self.open_manage_dialog)  # Connect the new method
+            self.bottom_text.setText(f"用户名：{login_dialog.username}")
             self.query_button.show()
         else:
             self.action_button.setText('充值')  # Change the button text to '充值'
             self.action_button.clicked.disconnect()  # Disconnect the previous method
             self.action_button.clicked.connect(self.open_top_up_dialog)  # Connect the new method
+            self.bottom_text.setText(f"用户名：{login_dialog.username}，余额：{login_dialog.balance}元")
         self.update()
         
     def logout(self):
