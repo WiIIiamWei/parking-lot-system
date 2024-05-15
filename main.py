@@ -447,7 +447,7 @@ class EditBalanceDialog(QDialog):
         self.plate = plate
         self.setWindowTitle("编辑余额")
         layout = QVBoxLayout()
-        layout.addWidget(QLabel(f"车牌号：{plate}，余额：{balance}元"))
+        layout.addWidget(QLabel(f"车牌号：{plate}，余额：{int(balance)}元"))
         self.balance_edit = QSpinBox()
         self.balance_edit.setRange(-999999, 999999)  # Set the range to accept positive/negative integers
         layout.addWidget(self.balance_edit)
@@ -466,7 +466,9 @@ class EditBalanceDialog(QDialog):
             for line in lines:
                 if line.startswith(self.plate + ':'):
                     parts = line.split(':', 3)
-                    parts[3] = str(self.balance_edit.value()) + '\n'
+                    old_balance = int(parts[3])
+                    new_balance = old_balance + self.balance_edit.value()
+                    parts[3] = str(new_balance) + '\n'
                     line = ':'.join(parts)
                 f.write(line)
         super().accept()
@@ -496,6 +498,8 @@ class QueryDialog(QDialog):
                         # Update the balance in the file
                         pass  # Add your code here
                     break
+            else:
+                QMessageBox.critical(self, "错误", "查询失败：车牌号未找到")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
