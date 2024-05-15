@@ -10,17 +10,17 @@ NJUPT程序设计（上机）课设项目，基于Python-PyQt5实现GUI。
 ```
 git clone https://gitee.com/WiIIiamWei/parking_lot_system.git
 ```
-或直接下载源代码并运行`main.py`。
+或直接下载源代码并运行`main.py`。在此之前，你可能需要执行
+```
+pip install PyQt5
+```
+以安装所需的框架。
 
 *麻烦老师给点高分 (>_<)*
 
 ### 已经实现的功能
 
-- 用户/管理员注册
-- 权限区分
-- 停车场GUI画面
-- 用户停车计时收费
-- 管理员停车场管理
+![Function Tree](assets/function_tree.png)
 
 ### ToDo/想法
 
