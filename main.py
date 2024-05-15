@@ -193,26 +193,30 @@ class ParkingSpace(QGraphicsRectItem):
                     with open('parking_lot_state.txt', 'r') as f:
                         for lines in f:
                             _, plate_number, entry_time = lines.strip().split(':',2)
-                            if plate_number==self.plate_number:
+                            if plate_number == self.plate_number:
                                 self.entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M:%S.%f")
 
                                 parking_duration = datetime.now() - self.entry_time  # Calculate the parking duration
                                 fee = calculate_fee(self.entry_time, datetime.now())  # Calculate the fee
-                
+
                                 QMessageBox.information(None, "停车时间", f"停车时间：{parking_duration}，费用：{fee}")
                                 # Update the user balance
-                                if login_dialog.role == "车主":
-                                    login_dialog.balance -= fee
+                                if login_dialog.role == "管理员":
                                     with open('./user_information.txt', 'r') as f:
                                         lines = f.readlines()
-                
-                                    with open('./user_information.txt', 'w') as f:
-                                        for line in lines:
-                                            username, password, role, balance = line.strip().split(':')
-                                            if username == login_dialog.username:
-                                                f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
-                                            else:
-                                                f.write(line)
+                                    for line in lines:
+                                        username, password, role, balance = line.strip().split(':')
+                                        if username == self.plate_number:
+                                            reply = QMessageBox.question(None, '扣费', '要扣除该用户的余额吗？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                                            if reply == QMessageBox.Yes:
+                                                new_balance = int(balance) - fee
+                                                with open('./user_information.txt', 'w') as f:
+                                                    for line in lines:
+                                                        if line.startswith(username + ':'):
+                                                            f.write(f"{username}:{password}:{role}:{new_balance}\n")
+                                                        else:
+                                                            f.write(line)
+                                            break
                     self.plate_number = None
                     self.setBrush(QBrush(QColor(0, 255, 0)))
                     self.scene().removeItem(self.text_item)
@@ -448,6 +452,7 @@ class EditBalanceDialog(QDialog):
         self.setWindowTitle("编辑余额")
         layout = QVBoxLayout()
         layout.addWidget(QLabel(f"车牌号：{plate}，余额：{int(balance)}元"))
+        layout.addWidget(QLabel("请输入要增加/减少的金额："))
         self.balance_edit = QSpinBox()
         self.balance_edit.setRange(-999999, 999999)  # Set the range to accept positive/negative integers
         layout.addWidget(self.balance_edit)
@@ -479,7 +484,7 @@ class QueryDialog(QDialog):
 
         self.setWindowTitle("查询")
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("请输入车牌号"))
+        layout.addWidget(QLabel("请输入车牌号："))
         self.plate_number_edit = QLineEdit()
         layout.addWidget(self.plate_number_edit)
         self.query_button = QPushButton("查询")
