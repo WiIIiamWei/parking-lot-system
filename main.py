@@ -201,13 +201,14 @@ class ParkingSpace(QGraphicsRectItem):
 
                                 QMessageBox.information(None, "停车时间", f"停车时间：{parking_duration}，费用：{fee}")
                                 # Update the user balance
-                                if login_dialog.role == "管理员":
-                                    with open('./user_information.txt', 'r') as f:
-                                        lines = f.readlines()
-                                    for line in lines:
-                                        username, password, role, balance = line.strip().split(':')
-                                        if username == self.plate_number:
-                                            reply = QMessageBox.question(None, '扣费', '要扣除该用户的余额吗？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                                with open('./user_information.txt', 'r') as f:
+                                    lines = f.readlines()
+                                for line in lines:
+                                    username, password, role, balance = line.strip().split(':')
+                                    if username == self.plate_number:
+                                        # If the user is an admin, ask if they want to deduct the balance
+                                        if login_dialog.role == "管理员":
+                                            reply = QMessageBox.question(None, '扣费', '确定要扣除该用户的余额？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                                             if reply == QMessageBox.Yes:
                                                 new_balance = int(balance) - fee
                                                 with open('./user_information.txt', 'w') as f:
@@ -216,7 +217,15 @@ class ParkingSpace(QGraphicsRectItem):
                                                             f.write(f"{username}:{password}:{role}:{new_balance}\n")
                                                         else:
                                                             f.write(line)
-                                            break
+                                        else:
+                                            new_balance = int(balance) - fee
+                                            with open('./user_information.txt', 'w') as f:
+                                                for line in lines:
+                                                    if line.startswith(username + ':'):
+                                                        f.write(f"{username}:{password}:{role}:{new_balance}\n")
+                                                    else:
+                                                        f.write(line)
+                                        break
                     self.plate_number = None
                     self.setBrush(QBrush(QColor(0, 255, 0)))
                     self.scene().removeItem(self.text_item)
@@ -233,7 +242,9 @@ class TopUpDialog(QDialog):
         self.setWindowTitle("充值")
 
         self.amount_label = QLabel("充值金额")
-        self.amount_edit = QLineEdit()
+        self.amount_edit = QSpinBox()
+        self.amount_edit.setMinimumWidth(200)
+        self.amount_edit.setRange(1, 999999)
 
         self.ok_button = QPushButton('确定')
         self.ok_button.clicked.connect(self.top_up)
@@ -250,24 +261,21 @@ class TopUpDialog(QDialog):
         self.setLayout(layout)
 
     def top_up(self):
-        amount = self.amount_edit.text()
-        if amount.isdigit() and int(amount) > 0:
-            login_dialog.balance += int(amount)
-            self.close()
+        amount = self.amount_edit.value()
+        login_dialog.balance += amount
+        self.close()
     
-            # Update the balance in the text file
-            with open('./user_information.txt', 'r') as f:
-                lines = f.readlines()
+        # Update the balance in the text file
+        with open('./user_information.txt', 'r') as f:
+            lines = f.readlines()
     
-            with open('./user_information.txt', 'w') as f:
-                for line in lines:
-                    username, password, role, balance = line.strip().split(':')
-                    if username == login_dialog.username:
-                        f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
-                    else:
-                        f.write(line)
-        else:
-            QMessageBox.warning(self, "错误", "充值金额必须为正整数")
+        with open('./user_information.txt', 'w') as f:
+            for line in lines:
+                username, password, role, balance = line.strip().split(':')
+                if username == login_dialog.username:
+                    f.write(f"{username}:{password}:{role}:{login_dialog.balance}\n")
+                else:
+                    f.write(line)
             
 class ParkingLot(QMainWindow):
     def __init__(self):
